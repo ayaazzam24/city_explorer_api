@@ -11,7 +11,7 @@ const app = express(); //initalize express app
 app.use(cors()); // use cors
 
 
-//create a get route for location
+
 
 
 

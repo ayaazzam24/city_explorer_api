@@ -13,48 +13,44 @@ app.use(cors()); // use cors
 
 //create a get route for location
 
-// localhost:3000/location client will request from this
-app.get('/location', handleLocation);
 
-// app.get('/weather',handleWearther );
 
-// express will return 404 not found from its internal error handler
-// 500 for internal server error: from express handler
 
-function handleLocation(request, response) {
-    // get from json file
-    // return data
-    const getLocation = require('./data/location.json');
-    console.log(request.query); // object: { city: 'amman' }
-    const city = request.query.city; // amman
-    console.log("city---->", city);
-    let obj = {
-        name: getLocation[0].display_name,
-        formatted_query: city,
-        city : city,
-        latitude: getLocation[0].lat,
-        longitude: getLocation[0].lon
-    };
-    // response.send("hello there!!!!");
-    response.send(obj);
+
+app.get('/location', location);
+app.get('/weather', weather);
+function LocationMaps(search_query,display_name, lat, lon)  {
+    this.search_query = search_query;
+    this.formatted_query = display_name;
+    this.latitude = lat;
+    this.longitude = lon;
 }
-
-//  function handleWearther(request, response) {
-//     // get from json file 
-//      // return data
-//     const data = require('./data/weather.json');
-//     const weather = data.nearby_weather;
-//     const weatherResponse = [];
-//      weather.forEach(item=> {
-//        const current = item.weather;
-//          weatherResponse.push({
-//           forecast:description ,
-
-//      time :valid_date,
-//       });
-//    });
-//      response.send(weatherResponse);
-//  }
-
-//  // run it on the port 
-//  app.listen(PORT, ()=> console.log(`App is running on Server on port: ${PORT}`))
+function location(request, response) {
+    const getLocation = require('./data/location.json');
+    let city = request.query.city;
+    console.log("city---->", city);
+    let newLocation = new LocationMaps(city, getLocation[0].display_name, getLocation[0].lat, getLocation[0].lon);
+    console.log('----->',newLocation);
+    response.send(newLocation);
+}
+let array = [];
+function WeatherHandel(forecast, time){
+    this.forecast = forecast;
+    this.time = time;
+    array.push(this);
+}
+function weather(request, response) {
+    if(array){
+        array = [];
+    }
+    const getData = require('./data/weather.json');
+    let dataArr = getData.data;
+    dataArr.forEach(element => {
+        let time = element.valid_date;
+        let dis = element.weather.description;
+        let weather = new WeatherHandel(dis, time);
+        
+    });
+    response.send(array);
+}
+app.listen(PORT, ()=> console.log(`App is running on Server on port: ${PORT}`))

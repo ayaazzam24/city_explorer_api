@@ -1,38 +1,79 @@
 'use strict';
 
-const PORT = 3000; // convert this to an envirment variable 
+require('dotenv').config();
+// convert this to an envirment variable 
 
 // my application dependencies
 const express = require('express'); // node.js framework.
 const cors = require('cors'); // cross origin resources sharing
+const superagent = require('superagent');
+
 
 const app = express(); //initalize express app
-
+const PORT = process.env.PORT;
 app.use(cors()); // use cors
 
+app.use('*', notFoundHandler); // 404 not found url
+ 
+app.use(errorHandler);
+
+function notFoundHandler(request, response) {
+  response.status(404).send('requested API is Not Found!');
+}
+
+function errorHandler(err, request, response, next) {
+  response.status(500).send('something is wrong in server');
+}
+
+app.get('/location', locationHandler);
+
+
+const myLocationArray = {};
+function locationHandler(request, response) {
+  
+  let city = request.query.city;
+  
+  
+  
+
+  if (myLocationArray[city]) {
+    
+    response.send(myLocationArray[city]);
+  
+  } else {
+    
+    console.log("1.from the location API")
+    let key = process.env.GEOCODE_API_KEY;
+    const url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
+    superagent.get(url).then(res=> {
+     
+      const locationData = res.body[0];
+      const location = new Location(city, locationData);
+      
+      
+      response.send(location);
+
+    }).catch((err)=> {
+      console.log("ERROR IN LOCATION API");
+      console.log(err)
+    });
+  }
+}
+
+function Location(city, geoData){
+  this.search_query = city;
+  this.formatted_query = geoData.display_name;
+  this.latitude = geoData.lat;
+  this.longitude = geoData.lon;
+}
 
 
 
 
 
 
-
-app.get('/location', location);
 app.get('/weather', weather);
-function LocationMaps(search_query,display_name, lat, lon)  {
-    this.search_query = search_query;
-    this.formatted_query = display_name;
-    this.latitude = lat;
-    this.longitude = lon;
-}
-function location(request, response) {
-    const getLocation = require('./data/location.json');
-    let city = request.query.city;
-    console.log("city---->", city);
-    let newLocation = new LocationMaps(city, getLocation[0].display_name, getLocation[0].lat, getLocation[0].lon);
-    console.log('----->',newLocation);
-    response.send(newLocation);
-}
+
 let array = [];
 function WeatherHandel(forecast, time){
     this.forecast = forecast;

@@ -19,6 +19,9 @@
   "homepage": "https://github.com/ayaazzam24/city_explorer_api#readme",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.17.1"
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "nodemon": "^2.0.7",
+    "superagent": "^6.1.0"
   }
 }

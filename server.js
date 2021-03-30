@@ -1,97 +1,107 @@
 'use strict';
-
+const PORT = 3000;
 require('dotenv').config();
-// convert this to an envirment variable 
-
-// my application dependencies
-const express = require('express'); // node.js framework.
-const cors = require('cors'); // cross origin resources sharing
+const express = require('express'); 
+const cors = require('cors'); 
 const superagent = require('superagent');
+const app = express();
+
+app.use(cors());
+
+app.listen(process.env.PORT || PORT, () => {
+    console.log('Server Start at ' + PORT + ' .... ');
+})
+
+let cityArray=[];
+function LoctionMaps(city, geoData) {
+    this.search_query = city;
+    this.formatted_query = geoData.display_name;
+    this.latitude = geoData.lat;
+    this.longitude = geoData.lon;
+    cityArray.push(this);
+}
+
+app.get('/location', handleLocation);
+const LocationS = {};
+function handleLocation(req, response) {
+    let city = req.query.city;
+    let key = 'pk.73d02362f3b19209cc519b0dd4e9cf2f';
+    
+    const url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
+    superagent.get(url).then(res => {
+        const data = res.body[0];
+        const location = new LoctionMaps(city, data);
+        LocationS.lat = data.lat;
+        LocationS.lon = data.lon;
+        response.send(location);
+
+    }).catch((err) => {
+        console.log('ERROR !! ', err);
+    });
+
+}
 
 
-const app = express(); //initalize express app
-const PORT = process.env.PORT;
-app.use(cors()); // use cors
 
-app.use('*', notFoundHandler); // 404 not found url
- 
+function Weather(item) {
+    this.time = item.datetime,
+    this.forecast = item.weather.description
+}
+app.get('/weather', handleWeather);
+
+function handleWeather(request, response) {
+    let lat = LocationS.lat;
+    let lon = LocationS.lon;
+    console.log(lat, ' ', lon);
+    let key = 'e5533604561a4e008bbc7e5ee03fb7dc';
+    const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${key}`;
+    superagent.get(url).then(res => {
+        let theWeather = [];
+        res.body.data.map(item => {
+           theWeather.push(new Weather(item));
+            return theWeather;
+        })
+        response.send(theWeather);
+    }).catch(err => {
+        response.status(404).send('requested API is Not Found!');
+    })
+}
+
+function Park(park) {
+    this.name =park.fullName,
+    this.park_url=park.url,
+    
+    this.fee='0',
+    this.description=park.description
+}
+app.get('/parks', handelPark);
+
+function handelPark(request, response) {
+    let key = 'JEqQ1NhTuMx7dkKha4yCqULkhhvic9hNDwLO8VMp';
+    const url = `https://developer.nps.gov/api/v1/parks?parkCode=la&limit=10&api_key=${key}`;
+    superagent.get(url)
+        .then(res => {
+            let thePark = [];
+            res.body.data.map(item=>{
+              thePark.push(new Park(item))
+                return thePark;
+            })
+            response.send(thePark)
+        })
+        .catch(err => {
+            response.status(404).send('ERROR !!', err);
+        })
+}
+
+
+app.use('*', (req, res) => {
+    let status = 404;
+    res.status().send({ status: status, message: 'Page Not Found' });
+})
+
 app.use(errorHandler);
 
-function notFoundHandler(request, response) {
-  response.status(404).send('requested API is Not Found!');
-}
 
 function errorHandler(err, request, response, next) {
-  response.status(500).send('something is wrong in server');
+    response.status(500).send('something is wrong in server');
 }
-
-app.get('/location', locationHandler);
-
-
-const myLocationArray = {};
-function locationHandler(request, response) {
-  
-  let city = request.query.city;
-  
-  
-  
-
-  if (myLocationArray[city]) {
-    
-    response.send(myLocationArray[city]);
-  
-  } else {
-    
-    console.log("1.from the location API")
-    let key = process.env.GEOCODE_API_KEY;
-    const url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
-    superagent.get(url).then(res=> {
-     
-      const locationData = res.body[0];
-      const location = new Location(city, locationData);
-      
-      
-      response.send(location);
-
-    }).catch((err)=> {
-      console.log("ERROR IN LOCATION API");
-      console.log(err)
-    });
-  }
-}
-
-function Location(city, geoData){
-  this.search_query = city;
-  this.formatted_query = geoData.display_name;
-  this.latitude = geoData.lat;
-  this.longitude = geoData.lon;
-}
-
-
-
-
-
-
-app.get('/weather', weather);
-
-let array = [];
-function WeatherHandel(forecast, time){
-    this.forecast = forecast;
-    this.time = time;
-    array.push(this);
-}
-function weather(request, response) {
-    if(array){
-        array = [];
-    }
-    const getData = require('./data/weather.json');
-    let dataArr = getData.data;
-    dataArr.forEach(element => {
-        let time = element.valid_date;
-        let dis = element.weather.description;
-        let weather = new WeatherHandel(dis, time);
-        
-    });
-    response.send(array);
-}
-app.listen(PORT, ()=> console.log(`App is running on Server on port: ${PORT}`))

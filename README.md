@@ -6,12 +6,12 @@
 Getting Started
 Architecture
 Change Log
-Number and name of feature: ________________________________
+Number and name of feature: __lab07______________________________
 
-Estimate of time needed to complete: _____
+Estimate of time needed to complete: _3 hours____
 
-Start time: _____
+Start time: __2___
 
-Finish time: _____
+Finish time: __8___
 
-Actual time needed to complete: _____
+Actual time needed to complete: ___6 hours__

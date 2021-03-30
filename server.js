@@ -1,8 +1,8 @@
 'use strict';
 const PORT = 3000;
 require('dotenv').config();
-const express = require('express'); // express framwork
-const cors = require('cors'); //api call out of domain
+const express = require('express'); 
+const cors = require('cors'); 
 const superagent = require('superagent');
 const app = express();
 
@@ -41,7 +41,7 @@ function handleLocation(req, response) {
 
 }
 
-/* constractor function that handel the weather in the same location */
+
 
 function Weather(item) {
     this.time = item.datetime,
@@ -56,12 +56,12 @@ function handleWeather(request, response) {
     let key = 'e5533604561a4e008bbc7e5ee03fb7dc';
     const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${key}`;
     superagent.get(url).then(res => {
-        let currentWeather = [];
+        let theWeather = [];
         res.body.data.map(item => {
-            currentWeather.push(new Weather(item));
-            return currentWeather;
+           theWeather.push(new Weather(item));
+            return theWeather;
         })
-        response.send(currentWeather);
+        response.send(theWeather);
     }).catch(err => {
         response.status(404).send('requested API is Not Found!');
     })
@@ -81,12 +81,12 @@ function handelPark(request, response) {
     const url = `https://developer.nps.gov/api/v1/parks?parkCode=la&limit=10&api_key=${key}`;
     superagent.get(url)
         .then(res => {
-            let parks = [];
+            let thePark = [];
             res.body.data.map(item=>{
-                parks.push(new Park(item))
-                return parks;
+              thePark.push(new Park(item))
+                return thePark;
             })
-            response.send(parks)
+            response.send(thePark)
         })
         .catch(err => {
             response.status(404).send('ERROR !!', err);

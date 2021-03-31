@@ -6,25 +6,20 @@ const cors = require('cors');
 const superagent = require('superagent');
 const app = express();
 const pg = require('pg');
-
 const DATABASE_URL = process.env.DATABASE_URL;
  
-
 app.use(cors());
-
-
-
-const client = new pg.Client('postgres://ayaazzam24:aya1234#@localhost:5432/ayaazzam24');
+const client = new pg.Client(DATABASE_URL);
 client.on('error', err => {
   console.log('there is an error')
 });
-
 client.connect().then(() => {
     app.listen(PORT, () => {
       console.log('on port' + PORT);
     });
   })
-
+let lat = '';
+let lon = '';
 app.get('/location', handleLocation);
 function MapsLocation(search_query, formatted_query, latitude, longitude) {
     this.search_query = search_query;
@@ -36,27 +31,29 @@ function MapsLocation(search_query, formatted_query, latitude, longitude) {
 function handleLocation(request, response) {
   
     let city = request.query.city;
-    const selected = "SELECT * FROM locations WHERE  search_query=$1 "
-    const selectedOf = [city]
-    client.query(selected, selectedOf).then((dataLoction)=>{
-      if(dataLoction.row === 0){
+    let key = process.env.loction;
+    const selected = "SELECT * FROM location WHERE search_query=$1;"
+    
+    client.query(selected, [city]).then((dataLoction3)=>{
+        // console.log(dataLoction3.row)
+      if(dataLoction3){
         let url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
-        superAgent.get(url).then(res => {
+        superagent.get(url).then(res => {
           let dataLoction = res.body[0];
           lat = dataLoction.lat;
           lon = dataLoction.lon;
           let theLocation = new MapsLocation(city, dataLoction.display_name,dataLoction.lat,dataLoction.lon);
-          const insert = 'INSERT INTO locations (search_query,formatted_query, latitude,longitude) VALUES ($1, $2 ,$3 ,$4);';
+          const insert = 'INSERT INTO location (search_query,formatted_query, latitude,longitude) VALUES ($1,$2,$3,$4);';
           const theValues= [theLocation.search_query,theLocation .formatted_query ,theLocation.latitude,theLocation.longitude];
           client.query(insert,theValues )
-          .then((dataLoction) => {
-            response.send(dataLoction.rows[0]);
+          .then((dataLoction2) => {
+            response.send(theLocation);
             
           });
         })
         
       } else {
-        response.send(dataLoction.rows[0]);
+        response.send(dataLoction3.rows[0]);
       }
     })
     
@@ -67,7 +64,6 @@ function handleLocation(request, response) {
     
     
    
-
     
     // //   superagent.get(url).then(res => {
     //  const data = res.body[0];
@@ -75,19 +71,13 @@ function handleLocation(request, response) {
     //     LocationS.lat = data.lat;
     //     LocationS.lon = data.lon;
     //     response.send(location);
-
     
-
-
 function Weather(item) {
     this.time = item.datetime,
     this.forecast = item.weather.description
 }
 app.get('/weather', handleWeather);
-
 function handleWeather(request, response) {
-    let lat = LocationS.lat;
-    let lon = LocationS.lon;
     console.log(lat, ' ', lon);
     let key = 'e5533604561a4e008bbc7e5ee03fb7dc';
     const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${key}`;
@@ -102,7 +92,6 @@ function handleWeather(request, response) {
         console.log(' THERES AN ERROR !! ', err);
     })
 }
-
 function Park(park) {
     this.name =park.fullName,
     this.park_url=park.url,
@@ -111,7 +100,6 @@ function Park(park) {
     this.description=park.description
 }
 app.get('/parks', handelPark);
-
 function handelPark(request, response) {
     let key = 'JEqQ1NhTuMx7dkKha4yCqULkhhvic9hNDwLO8VMp';
     const url = `https://developer.nps.gov/api/v1/parks?parkCode=la&limit=10&api_key=${key}`;
@@ -128,16 +116,16 @@ function handelPark(request, response) {
             response.status(404).send('ERROR !!', err);
         })
 }
-
-
 app.use('*', (req, res) => {
     let status = 404;
     res.status().send({ status: status, message: 'Page Not Found' });
 })
-
 app.use(errorHandler);
-
-
 function errorHandler(err, request, response, next) {
     response.status(500).send('something is wrong in server');
 }
+
+
+
+
+

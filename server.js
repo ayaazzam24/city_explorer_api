@@ -5,42 +5,78 @@ const express = require('express');
 const cors = require('cors'); 
 const superagent = require('superagent');
 const app = express();
+const pg = require('pg');
+
+const DATABASE_URL = process.env.DATABASE_URL;
+ 
 
 app.use(cors());
 
-app.listen(process.env.PORT || PORT, () => {
-    console.log('Server Start at ' + PORT + ' .... ');
-})
 
-let cityArray=[];
-function LoctionMaps(city, geoData) {
-    this.search_query = city;
-    this.formatted_query = geoData.display_name;
-    this.latitude = geoData.lat;
-    this.longitude = geoData.lon;
-    cityArray.push(this);
-}
+
+const client = new pg.Client('postgres://ayaazzam24:aya1234#@localhost:5432/ayaazzam24');
+client.on('error', err => {
+  console.log('there is an error')
+});
+
+client.connect().then(() => {
+    app.listen(PORT, () => {
+      console.log('on port' + PORT);
+    });
+  })
 
 app.get('/location', handleLocation);
-const LocationS = {};
-function handleLocation(req, response) {
-    let city = req.query.city;
-    let key = 'pk.73d02362f3b19209cc519b0dd4e9cf2f';
+function MapsLocation(search_query, formatted_query, latitude, longitude) {
+    this.search_query = search_query;
+    this.formatted_query = formatted_query;
+    this.latitude = latitude;
+    this.longitude = longitude;
+  }
     
-    const url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
-    superagent.get(url).then(res => {
-        const data = res.body[0];
-        const location = new LoctionMaps(city, data);
-        LocationS.lat = data.lat;
-        LocationS.lon = data.lon;
-        response.send(location);
+function handleLocation(request, response) {
+  
+    let city = request.query.city;
+    const selected = "SELECT * FROM locations WHERE  search_query=$1 "
+    const selectedOf = [city]
+    client.query(selected, selectedOf).then((dataLoction)=>{
+      if(dataLoction.row === 0){
+        let url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
+        superAgent.get(url).then(res => {
+          let dataLoction = res.body[0];
+          lat = dataLoction.lat;
+          lon = dataLoction.lon;
+          let theLocation = new MapsLocation(city, dataLoction.display_name,dataLoction.lat,dataLoction.lon);
+          const insert = 'INSERT INTO locations (search_query,formatted_query, latitude,longitude) VALUES ($1, $2 ,$3 ,$4);';
+          const theValues= [theLocation.search_query,theLocation .formatted_query ,theLocation.latitude,theLocation.longitude];
+          client.query(insert,theValues )
+          .then((dataLoction) => {
+            response.send(dataLoction.rows[0]);
+            
+          });
+        })
+        
+      } else {
+        response.send(dataLoction.rows[0]);
+      }
+    })
+    
+  }
+    
+    
+    
+    
+    
+   
 
-    }).catch((err) => {
-        console.log('ERROR !! ', err);
-    });
+    
+    // //   superagent.get(url).then(res => {
+    //  const data = res.body[0];
+    //    const location = new LoctionMaps(city, data);
+    //     LocationS.lat = data.lat;
+    //     LocationS.lon = data.lon;
+    //     response.send(location);
 
-}
-
+    
 
 
 function Weather(item) {
@@ -63,7 +99,7 @@ function handleWeather(request, response) {
         })
         response.send(theWeather);
     }).catch(err => {
-        response.status(404).send('requested API is Not Found!');
+        console.log(' THERES AN ERROR !! ', err);
     })
 }
 

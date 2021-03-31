@@ -14,7 +14,7 @@ app.use(cors());
 
 
 
-const client = new pg.Client(DATABASE_URL);
+const client = new pg.Client('postgres://ayaazzam24:aya1234#@localhost:5432/ayaazzam24');
 client.on('error', err => {
   console.log('there is an error')
 });
@@ -23,9 +23,7 @@ client.connect().then(() => {
     app.listen(PORT, () => {
       console.log('on port' + PORT);
     });
-  }).catch(err => {
-    console.log('there is an error' + err);
-  });
+  })
 
 app.get('/location', handleLocation);
 function MapsLocation(search_query, formatted_query, latitude, longitude) {
